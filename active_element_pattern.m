@@ -48,9 +48,12 @@ Jw = windowed_current(dipole.l, dipole.w, ibf, AF, k, k_comp);
 SGFej = dyadic_sgf(medium.er, wave.k, k_comp, 'E', 'J');
 
 %% ACTIVE ELEMENT ELECTRIC FAR-FIELD
-% E-field in x-direction, SGFxx and Jw_x
 Efar = zeros( [size(sph_grid, 1, 2), 3] );
 Efar(:, :, 1) = 1j * k_comp(:, :, 3) .* SGFej(:, :, 1, 1) ...
+    .* Jw(:, :, 1) .* exp(-1j * k * R) ./ (2 * pi * R);
+Efar(:, :, 2) = 1j * k_comp(:, :, 3) .* SGFej(:, :, 2, 1) ...
+    .* Jw(:, :, 1) .* exp(-1j * k * R) ./ (2 * pi * R);
+Efar(:, :, 3) = 1j * k_comp(:, :, 3) .* SGFej(:, :, 3, 1) ...
     .* Jw(:, :, 1) .* exp(-1j * k * R) ./ (2 * pi * R);
 Efar_total = total_field(Efar);
 
@@ -80,10 +83,9 @@ hold off;
 grid on;
 legend show;
 legend('location', 'bestoutside');
-xticks(-90 : 15 : 90); 
-yticks(-14 : 2 : 0);
+xticks(-90 : 15 : 90);
 xlim([-90 90]);
-ylim([-14 0]);
+ylim([-25 0]);
 xlabel('\theta / deg');
 ylabel('E / dB');
 title(['Active Element Pattern @ f = ' num2str(wave.f * 1e-9) ...

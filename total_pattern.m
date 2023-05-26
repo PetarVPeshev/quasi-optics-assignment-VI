@@ -16,8 +16,8 @@ fss.Nx = 10;
 fss.Ny = 10;
 dipole.l = 15e-3;
 dipole.w = 1e-3;
-fss.dx = 15e-3;
-fss.dy = 15e-3;
+fss.dx = 20e-3;
+fss.dy = 20e-3;
 theta_i = [0 30] * pi / 180;
 phi_i = [0 0] * pi / 180;
 Ntheta = 1200;
@@ -37,6 +37,7 @@ sph_grid = meshgrid_comb(theta, phi);
 
 Efar = zeros( [size(sph_grid, 1, 2), 3, length(theta_i)] );
 Efar_total = NaN( [size(sph_grid, 1, 2), length(theta_i)] );
+Efar_norm = NaN( [size(sph_grid, 1, 2), length(theta_i)] );
 for idx = 1 : 1 : length(theta_i)
     %% INCIDENT SPHERICAL GRID
     sph_grid_i = NaN(1, 1, 2);
@@ -60,12 +61,15 @@ for idx = 1 : 1 : length(theta_i)
     %% ACTIVE ELEMENT ELECTRIC FAR-FIELD
     Efar(:, :, 1, idx) = 1j * k_comp(:, :, 3) .* SGFej(:, :, 1, 1) ...
         .* Jw(:, :, 1) .* exp(-1j * k * R) ./ (2 * pi * R);
+    Efar(:, :, 2, idx) = 1j * k_comp(:, :, 3) .* SGFej(:, :, 2, 1) ...
+        .* Jw(:, :, 1) .* exp(-1j * k * R) ./ (2 * pi * R);
+    Efar(:, :, 3, idx) = 1j * k_comp(:, :, 3) .* SGFej(:, :, 3, 1) ...
+        .* Jw(:, :, 1) .* exp(-1j * k * R) ./ (2 * pi * R);
     Efar_total(:, :, idx) = total_field(Efar(:, :, :, idx));
+    Efar_norm(:, :, idx) = norm_magnitude(Efar_total(:, :, idx), 'dB');
 end
 
 %% PLOT E AND H PLANE IMPEDANCE
-Efar_norm = 20 * log10( abs(Efar_total) ) ...
-    - 20 * log10( max(abs(Efar_total), [], 'all') );
 theta_length = length(theta);
 theta_plot = NaN(1, theta_length * 2);
 theta_plot(1 : theta_length) = - fliplr(theta) * 180 / pi;
@@ -87,7 +91,7 @@ legend show;
 legend('location', 'bestoutside');
 xticks(-90 : 15 : 90);
 xlim([-90 90]);
-ylim([-45 0]);
+ylim([-30 0]);
 xlabel('\theta / deg');
 ylabel('|E| / dB');
 title(['E Far-Field @ E-plane, f = ' num2str(wave.f * 1e-9) ...
@@ -95,29 +99,3 @@ title(['E Far-Field @ E-plane, f = ' num2str(wave.f * 1e-9) ...
     num2str(dipole.w * 1e3) ' mm, d_{x} = ' num2str(fss.dx * 1e3) ...
     ' mm, and d_{y} = ' num2str(fss.dy * 1e3) ' mm']);
 saveas(gcf, 'figures\E_plane.fig');
-
-figure('Position', [250 250 900 400]);
-for idx = 1 : 1 : length(theta_i)
-    plane_field = NaN(1, theta_length * 2);
-    plane_field(1 : theta_length) = fliplr(Efar_norm(4, :, idx));
-    plane_field(theta_length + 1 : end) = Efar_norm(2, :, idx);
-    plot(theta_plot, plane_field, 'LineWidth', 2.0, ...
-        'DisplayName', ['|E|, \theta_{i} = ' ...
-        num2str(theta_i(idx) * 180 / pi) ' deg and \phi_{i} = ' ...
-        num2str(phi_i(idx) * 180 / pi) ' deg']);
-    hold on;
-end
-hold off;
-grid on;
-legend show;
-legend('location', 'bestoutside');
-xticks(-90 : 15 : 90);
-xlim([-90 90]);
-ylim([-45 0]);
-xlabel('\theta / deg');
-ylabel('|E| / dB');
-title(['E Far-Field @ H-plane, f = ' num2str(wave.f * 1e-9) ...
-    ' GHz, L = ' num2str(dipole.l * 1e3) ' mm, and W = ' ...
-    num2str(dipole.w * 1e3) ' mm, d_{x} = ' num2str(fss.dx * 1e3) ...
-    ' mm, and d_{y} = ' num2str(fss.dy * 1e3) ' mm']);
-saveas(gcf, 'figures\H_plane.fig');
